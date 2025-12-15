@@ -3,63 +3,37 @@
 
 MPU6050 mpu;
 
-// Pins
-int sliderPin = A0;      // Middle pin of slider
-int speakerPin = 8;       // Speaker
+const int sliderPin = A0;
+const int speakerPin = 8;
 
-// Settings
-int sliderThreshold = 512;   // Slider ON if > 512
-int motionThreshold = 15000; // Motion detection sensitivity
+const int sliderThreshold = 512;
+const int motionThreshold = 15000;
 
 void setup() {
   Serial.begin(9600);
   Wire.begin();
-
-  // Initialize the MPU6050
-  Serial.println("Initializing MPU6050...");
   mpu.initialize();
 
-  // Check if sensor works
-  if (mpu.testConnection()) {
-    Serial.println("MPU6050 connected!");
-  } else {
-    Serial.println("MPU6050 connection FAILED!");
-  }
-
-  pinMode(speakerPin, OUTPUT);
+  Serial.println(mpu.testConnection() ? "MPU6050 connected!" : "MPU6050 FAILED!");
 }
 
 void loop() {
-
-  // Read slider
-  int sliderValue = analogRead(sliderPin);
-
-  if (sliderValue > sliderThreshold) {
-
-    // -------- MPU6050 Motion Read --------
-    int16_t ax, ay, az, gx, gy, gz;
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
-    // Print values
-    Serial.print("AX: "); Serial.print(ax);
-    Serial.print(" AY: "); Serial.print(ay);
-    Serial.print(" AZ: "); Serial.print(az);
-    Serial.print(" | GX: "); Serial.print(gx);
-    Serial.print(" GY: "); Serial.print(gy);
-    Serial.print(" GZ: "); Serial.println(gz);
-
-    // -------- Motion Detection --------
-    if (abs(ax) > motionThreshold ||
-        abs(ay) > motionThreshold ||
-        abs(az) > motionThreshold) {
-
-      tone(speakerPin, 1000, 150); // beep
-      delay(200);
-    }
-
-  } else {
-    // Slider is OFF
-    Serial.println("SLIDER OFF");
-    delay(200);
+  if (analogRead(sliderPin) <= sliderThreshold) {
+    noTone(speakerPin);
+    return;
   }
+
+  int16_t ax, ay, az, gx, gy, gz;
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+  if (abs(ax) > motionThreshold ||
+      abs(ay) > motionThreshold ||
+      abs(az) > motionThreshold) 
+  {
+    tone(speakerPin, 1000);
+  } else {
+    noTone(speakerPin);
+  }
+
+  delay(50);
 }
